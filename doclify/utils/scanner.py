@@ -26,6 +26,7 @@ def scan_repo():
         for p in Path(".").rglob("*")
         if p.is_file()
         and not spec.match_file(p)
+        and p.stat().st_size > 0
         and p.suffix in {".py", ".md", ".txt"}
     ]
 

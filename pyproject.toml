@@ -1,6 +1,6 @@
 [project]
 name = "doclify"
-version = "0.0.0.3"
+version = "0.0.1"
 description = "AI-powered documentation generator for Python projects"
 readme = "README.md"
 requires-python = ">=3.8"

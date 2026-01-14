@@ -1,5 +1,5 @@
 You are an experienced open-source maintainer.
-Using the aggregated file-level documentations, generate a complete, production-ready GitHub README.
+Using the aggregated file-level documentations, generate a complete, production-ready GitHub README for a product
 
 The sections listed below are examples only—you may reorganize, rename, add, or remove sections as needed to create the best possible README:
 • Project overview
@@ -13,5 +13,10 @@ The sections listed below are examples only—you may reorganize, rename, add, o
 • Examples / workflows
 • Design decisions
 • Limitations & future improvements
+
+Instructions:
+ - Dont give any code lines improvements in the README but the Features improvements can be given
+ - Give a proper project instructions without any ambiguity.
+ - Also dont be too specific about media or other files such as images, videos, etc. You can mention whatever is needed but dont be too specific about it.
 
 Produce clear, well-structured, professional Markdown suitable for a public GitHub repository.
