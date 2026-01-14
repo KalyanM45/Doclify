@@ -8,10 +8,7 @@ license = {text = "GNU AFFERO GENERAL PUBLIC LICENSE"}
 authors = [
   {name = "Hema Kalyan", email = "mhemakalyan@gmail.com"}
 ]
-urls = {
-    Repository = "https://github.com/KalyanM45/Doclify",
-    Issues = "https://github.com/KalyanM45/Doclify/issues"
-}
+
 dependencies = [
     "click",
     "google-genai",
@@ -20,6 +17,10 @@ dependencies = [
     "rich",
     "twine>=6.2.0",
 ]
+
+[project.urls]
+Repository = "https://github.com/KalyanM45/Doclify"
+Issues = "https://github.com/KalyanM45/Doclify/issues"
 
 [project.scripts]
 doclify = "doclify.pipelines.supervisor:cli"
