@@ -8,4 +8,10 @@ dependencies = [
 ]
 
 [project.scripts]
-docly = "docly.cli:cli"
+docly = "docly.pipelines.supervisor:cli"
+
+[tool.setuptools]
+packages = ["docly"]
+
+[tool.setuptools.package-data]
+"docly" = ["resources/*.gitignore"]

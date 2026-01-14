@@ -1,32 +1,32 @@
-from pathlib import Path
 import pathspec
+from pathlib import Path
 
-def load_gitignore_patterns(ignore_name=None):
+def scan_repo():
     patterns = []
 
-    if ignore_name:
-        builtin_dir = Path(__file__).resolve().parent / "gitignores"
-        ignore_file = builtin_dir / f"{ignore_name}.gitignore"
-        if ignore_file.exists():
-            patterns.extend(ignore_file.read_text().splitlines())
+    # Built-in Python gitignore
+    try:
+        from importlib.resources import files
+        builtin_ignore = files("docly.resources").joinpath("Python.gitignore")
+        if builtin_ignore.is_file():
+            patterns.extend(builtin_ignore.read_text(encoding="utf-8").splitlines())
+    except Exception as e:
+        # Fallback or log error if needed
+        pass
 
-    project_gitignore = Path("data/Python.gitignore")
+    # User project .gitignore
+    project_gitignore = Path(".gitignore")
     if project_gitignore.exists():
         patterns.extend(project_gitignore.read_text().splitlines())
 
-    return patterns
-
-
-def scan_repo(ignore_name=None):
-    spec = pathspec.PathSpec.from_lines(
-        "gitwildmatch",
-        load_gitignore_patterns(ignore_name)
-    )
+    spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
 
     files = [
         str(p)
         for p in Path(".").rglob("*")
-        if p.is_file() and not spec.match_file(p) and p.suffix == ".py" or p.suffix == ".md" or p.suffix == ".txt"
+        if p.is_file()
+        and not spec.match_file(p)
+        and p.suffix in {".py", ".md", ".txt"}
     ]
 
     return {
