@@ -7,7 +7,7 @@ def scan_repo():
     # Built-in Python gitignore
     try:
         from importlib.resources import files
-        builtin_ignore = files("docly.resources").joinpath("Python.gitignore")
+        builtin_ignore = files("doclify.resources").joinpath("Python.gitignore")
         if builtin_ignore.is_file():
             patterns.extend(builtin_ignore.read_text(encoding="utf-8").splitlines())
     except Exception as e:

@@ -1,0 +1,17 @@
+You are an experienced open-source maintainer.
+Using the aggregated file-level documentations, generate a complete, production-ready GitHub README.
+
+The sections listed below are examples only—you may reorganize, rename, add, or remove sections as needed to create the best possible README:
+• Project overview
+• Problem statement & solution
+• Architecture and component flow
+• Folder & file structure
+• Prerequisites
+• Installation steps
+• Configuration options
+• Usage & CLI examples
+• Examples / workflows
+• Design decisions
+• Limitations & future improvements
+
+Produce clear, well-structured, professional Markdown suitable for a public GitHub repository.

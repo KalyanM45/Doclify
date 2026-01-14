@@ -1,17 +1,20 @@
 [project]
-name = "docly"
-version = "0.1.0"
+name = "doclify"
+version = "0.0.0.1"
 dependencies = [
     "click",
+    "google-genai",
     "pathspec>=1.0.3",
     "pyyaml",
+    "rich",
+    "twine>=6.2.0",
 ]
 
 [project.scripts]
-docly = "docly.pipelines.supervisor:cli"
+doclify = "doclify.pipelines.supervisor:cli"
 
 [tool.setuptools]
-packages = ["docly"]
+packages = ["doclify"]
 
 [tool.setuptools.package-data]
-"docly" = ["resources/*.gitignore"]
+"doclify" = ["resources/*.gitignore"]
