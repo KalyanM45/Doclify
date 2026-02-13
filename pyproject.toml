@@ -1,9 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+package = true
+
 [project]
 name = "doclify"
 version = "0.2.1"
 description = "AI-powered documentation generator for Python projects"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = {text = "GNU AFFERO GENERAL PUBLIC LICENSE"}
 authors = [
   {name = "Hema Kalyan", email = "mhemakalyan@gmail.com"}
@@ -11,10 +18,15 @@ authors = [
 
 dependencies = [
     "click",
-    "google-genai",
     "pathspec>=1.0.3",
     "pyyaml",
     "rich",
+    "litellm",
+    "pytest>=9.0.2",
+]
+
+[project.optional-dependencies]
+dev = [
     "twine>=6.2.0",
 ]
 

@@ -7,6 +7,8 @@
   [![PyPI Downloads](https://img.shields.io/pypi/dm/doclify?style=flat&color=blue)](https://pypi.org/project/doclify/)
   [![GitHub License](https://img.shields.io/github/license/KalyanM45/Doclify?style=flat&color=blue)](https://github.com/KalyanM45/Doclify/blob/main/LICENSE)
   [![Issues](https://img.shields.io/github/issues/KalyanM45/Doclify?style=flat&color=red)](https://github.com/KalyanM45/Doclify/issues)
+  [![Status](https://img.shields.io/badge/status-unstable%20v0.2.1-orange)](https://pypi.org/project/doclify/)
+  [![Stable](https://img.shields.io/badge/stable-v0.20-green)](https://pypi.org/project/doclify/)
 </div>
 
 ---

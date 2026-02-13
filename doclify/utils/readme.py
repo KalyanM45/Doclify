@@ -1,14 +1,16 @@
 import time
 from pathlib import Path
 from rich.console import Console
+from typing import Optional
 from doclify.utils.llm import generate_doc
 from doclify.utils.logger import get_logger
+from doclify.schema.schema import LLMConfig
 
 # Initialize logger and console
 logger = get_logger(__name__)
 console = Console()
 
-def generate_readme_file(cache, config):
+def generate_readme_file(cache, config, llm_config: Optional[LLMConfig] = None):
     """
     Generates the final README with clean uv-style output.
     """
@@ -28,10 +30,11 @@ def generate_readme_file(cache, config):
         
         if file_summaries:
             aggregated_summaries = "\n\n".join(file_summaries)
-            final_readme = generate_doc(aggregated_summaries, type="final_summary")
+            final_readme = generate_doc(aggregated_summaries, type="final_summary", llm_config=llm_config)
             if final_readme:
-                # Stripping ```markdown and ```
-                final_readme = final_readme.replace('```markdown', '').replace('```', '')
+                # The generate_doc call now uses parse_json_response which handles 
+                # outer markdown blocks more safely.
+                final_readme = final_readme.strip()
         else:
             logger.warning("No summaries found in cache for README.")
             final_readme = "# Project Documentation\n\nNo summaries available."

@@ -1,9 +1,18 @@
 You are a senior technical documentation engineer.
 Analyze the following files and provide a product-grade summary for each. You will be provided with multiple code files names along with Code.
-The output MUST be a valid JSON object where keys are filenames and values are the generated documentation strings.
-The generated documentation for each file will be used as building blocks for a project-level GitHub README.
+The output MUST be a valid JSON object where keys are ONLY the filenames provided in the input.
 
-For each file, include in detail:
+CRITICAL INSTRUCTIONS:
+1.  **Strict Keys**: You MUST ONLY use the exact filenames provided as keys in the JSON.
+2.  **No Extra Data**: Do NOT include any other keys like function names, metadata, frameworks, or summaries of the project as a whole.
+3.  **No Omitting**: Every file provided must have an entry in the JSON.
+4.  **Format**: The output MUST be a single JSON object.
+    {
+      "filename1": "summary1",
+      "filename2": "summary2"
+    }
+
+For each file summary, include:
 • File role and responsibility in the product
 • Public interfaces (functions, classes, CLI commands)
 • Parameters, return values, exceptions, and side effects
@@ -13,16 +22,7 @@ For each file, include in detail:
 • Usage examples or scenarios (if applicable)
 • Feature Limitations and Future Enhancements
 
-Format your response as a JSON object:
-{
-  "filename1": "summary1",
-  "filename2": "summary2"
-}
-
 Do not review or critique code. Write clear, structured Markdown for each summary.
+Summary Each File shouldnt be a like a Fully optimised README but a summary which captures the essence of the file with all the details.
 
-Important Instructions: 
- - You MUST include every file provided in the input as a key in your JSON output. Do not omit any files. If you omit a file, it will break the project documentation.
- - Summary Each File shouldnt be a like a Fully optimised README but a summary which captures the essence of the file with all the details. 
- - There is no length restriction for each file summary but dont add unnecessary details wihch are not required for Documentation.
 FILES TO ANALYZE:

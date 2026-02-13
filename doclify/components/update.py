@@ -1,4 +1,5 @@
 import click
+import time
 import yaml
 import json
 import re
@@ -9,7 +10,8 @@ from rich.prompt import Confirm  # <--- Added this import
 from doclify.utils.file_utils import load_cache, save_cache
 from doclify.utils.extract import extract_file_content
 from doclify.utils.llm import generate_doc
-from doclify.schema.schema import FileSummaries
+from doclify.config.constants import LiteLLMConfig
+from doclify.schema.schema import FileSummaries, LLMConfig
 from doclify.utils.readme import generate_readme_file
 from doclify.utils.logger import get_logger
 
@@ -17,12 +19,13 @@ from doclify.utils.logger import get_logger
 logger = get_logger(__name__)
 console = Console()
 
-def update_docs(path):
+def update_docs(path, model=None, provider=None):
     """
     Update documentation for a specific file or all files (use '.').
     Logs all steps to .doclify/logs/ with a clean uv-style UI.
     """
-    logger.info(f"Update sequence triggered for path: {path}")
+    start_time = time.time()
+    logger.info(f"Update sequence triggered for path: {path}. Overrides: model={model}, provider={provider}")
     config_path = Path("doclify.yaml")
     files_to_process = []
 
@@ -36,6 +39,21 @@ def update_docs(path):
         try:
             config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
             files_to_process = config.get("structure", [])
+            
+            # Load LLM Config
+            llm_data = config.get("llm", {})
+            llm_config = LLMConfig(**llm_data) if llm_data else None
+            
+            # CLI Overrides
+            if llm_config:
+                if model: llm_config.model = model
+                if provider: llm_config.provider = provider
+            elif model or provider:
+                llm_config = LLMConfig(
+                    model=model or LiteLLMConfig.DEFAULT_MODEL,
+                    provider=provider
+                )
+            
             logger.info(f"Loaded {len(files_to_process)} files from configuration for update.")
         except Exception as e:
             logger.error(f"Failed to read doclify.yaml: {str(e)}", exc_info=True)
@@ -77,35 +95,41 @@ def update_docs(path):
     batch_size = 5
     total_files = len(all_file_contents)
     
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    def process_batch(batch):
+        batch_files = [item[0] for item in batch]
+        batch_content = "\n".join([item[1] for item in batch])
+        try:
+            summaries_model = generate_doc(
+                batch_content, 
+                type="batch_summary", 
+                json_format=FileSummaries,
+                llm_config=llm_config
+            )
+            return summaries_model.root
+        except Exception as e:
+            logger.error(f"Error during update batch {batch_files}: {str(e)}", exc_info=True)
+            return {}
+
     with console.status(f"[bold cyan]Processing[/bold cyan] Files (0/{total_files})...", spinner="dots") as status:
-        for i in range(0, total_files, batch_size):
-            batch = all_file_contents[i:i + batch_size]
-            batch_files = [item[0] for item in batch]
-            batch_content = "\n".join([item[1] for item in batch])
+        batches = [all_file_contents[i:i + batch_size] for i in range(0, total_files, batch_size)]
+        processed_count = 0
+
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            futures = {executor.submit(process_batch, b): b for b in batches}
             
-            # Update console progress
-            current_progress = min(i + batch_size, total_files)
-            status.update(f"[bold cyan]Processing[/bold cyan] Files ({current_progress}/{total_files})...")
-            
-            logger.info(f"Processing update batch: {batch_files}")
-            
-            try:
-                batch_response = generate_doc(batch_content, type="batch_summary", json_format=FileSummaries)
+            for future in as_completed(futures):
+                batch_results = future.result()
+                if batch_results:
+                    if "files" not in cache:
+                        cache["files"] = {}
+                    cache["files"].update(batch_results)
+                    save_cache(cache)
+                    logger.info(f"Cache chunk updated successfully.")
                 
-                # Extract JSON
-                json_match = re.search(r'```json\s*(.*?)\s*```', batch_response, re.DOTALL)
-                new_summaries = json.loads(json_match.group(1)) if json_match else json.loads(batch_response.strip())
-                
-                # Update cache
-                if "files" not in cache:
-                    cache["files"] = {}
-                cache["files"].update(new_summaries)
-                save_cache(cache)
-                logger.info(f"Cache updated successfully.")
-                
-            except Exception as e:
-                logger.error(f"Error during update batch {batch_files}: {str(e)}", exc_info=True)
-                continue
+                processed_count += len(futures[future])
+                status.update(f"[bold cyan]Processing[/bold cyan] Files ({processed_count}/{total_files})...")
     
     # Success message matching the 'uv' aesthetic
     if path == ".":
@@ -119,7 +143,8 @@ def update_docs(path):
         logger.info("User confirmed README regeneration.")
         # Load config again to ensure we have the latest structure for generate_readme_file
         config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-        generate_readme_file(cache, config)
+        duration = time.time() - start_time
+        generate_readme_file(cache, config, llm_config=llm_config)
         console.print(f"[bold green]Generated[/bold green] README.md in [white]{duration:.1f} secs[/white]")
     else:
         logger.info("User declined README regeneration.")
