@@ -1,6 +1,5 @@
 import click
 from doclify.components.init import init_project
-from doclify.components.refresh import refresh_project
 
 from doclify import __version__
 
@@ -13,9 +12,17 @@ def cli():
 def init():
     init_project()
 
-@cli.command()
-def refresh():
-    refresh_project()
+@cli.group(name="set")
+def set_group():
+    """Set configuration settings for Doclify."""
+    pass
+
+@set_group.command("default")
+@click.argument("model")
+def set_default(model):
+    """Set the default LLM model in doclify.yaml"""
+    from doclify.components.config import update_config
+    update_config(model=model)
 
 @cli.command()
 @click.option('--model', help='Override the LLM model.')

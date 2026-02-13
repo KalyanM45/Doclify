@@ -26,7 +26,7 @@ def init_project():
     # ----------------------------------------------------------------------------------------------------
 
     try:        
-        with console.status("[bold cyan]Analyzing[/bold cyan] Repository Structure", spinner="arc"):
+        with console.status("[bold cyan]Analyzing[/bold cyan] Repository Structure", spinner="dots"):
             repo_structure = scan_repo()
             logger.info(f"Scan complete. Found {len(repo_structure.get('structure', []))} File Nodes.")
 
