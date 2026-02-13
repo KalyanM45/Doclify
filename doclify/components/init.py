@@ -1,5 +1,4 @@
 import yaml
-import tempfile
 import os
 from pathlib import Path
 from rich.console import Console
@@ -12,37 +11,52 @@ console = Console()
 
 def init_project():
     """
-    Initialize or reinitialize a Doclify project with fixed YAML order and atomic safety.
+    Initializing or Re-Initializing the Doclify Project    
     """
+    
+    # 1. Defining Yaml Path Configuration and Checking the existence of it
+    # ----------------------------------------------------------------------------------------------------
+
+    logger.info(f"Init sequence started. Directory: {Path.cwd()}")
     config_path = Path("doclify.yaml")
     is_reinit = config_path.exists()
-    
-    logger.info(f"Init sequence started. Directory: {Path.cwd()}")
+
+
+    # 2. Scanning the Repository Structure
+    # ----------------------------------------------------------------------------------------------------
 
     try:        
-        with console.status("[bold cyan]Analyzing[/bold cyan] repository structure...", spinner="dots"):
+        with console.status("[bold cyan]Analyzing[/bold cyan] Repository Structure", spinner="arc"):
             repo_structure = scan_repo()
-            logger.info(f"Scan complete. Found {len(repo_structure.get('structure', []))} file nodes.")
+            logger.info(f"Scan complete. Found {len(repo_structure.get('structure', []))} File Nodes.")
+
+
+        # 3. Handling .gitignore
+        # ----------------------------------------------------------------------------------------------------
             
-        # Handle .gitignore
         gitignore_path = Path(".gitignore")
         doclify_ignore = ".doclify/"
         
         try:
             if gitignore_path.exists():
+                # If .gitignore exists
                 content = gitignore_path.read_text(encoding="utf-8")
                 if doclify_ignore not in content.splitlines():
-                    logger.info("Appending .doclify/ to .gitignore")
+                    logger.info("Adding .doclify/ to .gitignore file")
                     suffix = "\n" if not content.endswith("\n") else ""
                     with open(gitignore_path, "a", encoding="utf-8") as f:
                         f.write(f"{suffix}{doclify_ignore}\n")
             else:
-                logger.info("Creating new .gitignore")
+                # If .gitignore does not exist, create it
+                logger.info("Creating new .gitignore file")
                 gitignore_path.write_text(f"{doclify_ignore}\n", encoding="utf-8")
+
         except Exception as git_err:
             logger.warning(f"Could not update .gitignore: {git_err}")
 
-        # Construct dictionary in specific order (project -> structure -> llm)
+        # 4. Customizing the Yaml File
+        # ----------------------------------------------------------------------------------------------------
+
         final_config = {
             "project": repo_structure.get("project", Path.cwd().name),
             "structure": repo_structure.get("structure", []),
@@ -51,24 +65,25 @@ def init_project():
             }
         }
 
-        # Atomic Write (Removed "Writing" spinner as requested)
-        fd, temp_path = tempfile.mkstemp(dir=".", prefix="doclify_cfg_", suffix=".tmp")
+        # 5. Writing the Yaml Configuration
+        # ----------------------------------------------------------------------------------------------------
+
         try:
-            with os.fdopen(fd, 'w', encoding="utf-8") as f:
-                # sort_keys=False preserves the order defined in the final_config dict
+            with open(config_path, "w", encoding="utf-8") as f:
                 yaml.dump(final_config, f, default_flow_style=False, sort_keys=False)
-            
-            os.replace(temp_path, config_path)
-            logger.info(f"Configuration atomically written to {config_path}")
-        except Exception:
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
+            logger.info(f"Configuration written to {config_path}")
+        
+        except Exception as write_err:
+            logger.error(f"Failed to write configuration: {write_err}")
             raise
 
     except Exception as e:
-        logger.error(f"Initialization failed: {str(e)}", exc_info=True)
-        console.print(f"\n[bold red]✖ Error:[/bold red] Failed to initialize project.")
+        logger.error(f"Doclify Initialization Failed: {str(e)}", exc_info=True)
+        console.print(f"\n[bold red]✖ Error:[/bold red] Failed to Initialize Doclify. {str(e)}")
         return
+
+    # 6. Displaying Success Message
+    # ----------------------------------------------------------------------------------------------------
 
     action = "Reinitialized" if is_reinit else "Initialized"
     console.print(f"[bold green]✔ {action}[/bold green] [blue]{config_path}[/blue]")
