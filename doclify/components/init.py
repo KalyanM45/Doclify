@@ -28,28 +28,36 @@ def init_project():
     try:        
         with console.status("[bold cyan]Analyzing[/bold cyan] Repository Structure", spinner="dots"):
             repo_structure = scan_repo()
-            logger.info(f"Scan complete. Found {len(repo_structure.get('structure', []))} File Nodes.")
+        
+        logger.info(f"Scan complete. Found {len(repo_structure.get('structure', []))} File Nodes.")
 
 
         # 3. Handling .gitignore
         # ----------------------------------------------------------------------------------------------------
             
         gitignore_path = Path(".gitignore")
-        doclify_ignore = ".doclify/"
+        doclify_ignores = [".doclify/", "doclify.yaml"]
         
         try:
+            lines = []
             if gitignore_path.exists():
-                # If .gitignore exists
                 content = gitignore_path.read_text(encoding="utf-8")
-                if doclify_ignore not in content.splitlines():
-                    logger.info("Adding .doclify/ to .gitignore file")
-                    suffix = "\n" if not content.endswith("\n") else ""
-                    with open(gitignore_path, "a", encoding="utf-8") as f:
-                        f.write(f"{suffix}{doclify_ignore}\n")
-            else:
-                # If .gitignore does not exist, create it
-                logger.info("Creating new .gitignore file")
-                gitignore_path.write_text(f"{doclify_ignore}\n", encoding="utf-8")
+                # Keep original lines and avoid duplicates
+                lines = [line.strip() for line in content.splitlines() if line.strip()]
+            
+            # Add missing ignores
+            added_any = False
+            for entry in doclify_ignores:
+                if entry not in lines:
+                    lines.append(entry)
+                    added_any = True
+                    logger.info(f"Adding {entry} to .gitignore")
+
+            if added_any or not gitignore_path.exists():
+                # Write back with proper newlines
+                with open(gitignore_path, "w", encoding="utf-8") as f:
+                    f.write("\n".join(lines) + "\n")
+                logger.info(".gitignore updated successfully")
 
         except Exception as git_err:
             logger.warning(f"Could not update .gitignore: {git_err}")
@@ -57,12 +65,27 @@ def init_project():
         # 4. Customizing the Yaml File
         # ----------------------------------------------------------------------------------------------------
 
+        # Load existing config if it exists to preserve extra fields
+        existing_config = {}
+        if is_reinit:
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    existing_config = yaml.safe_load(f) or {}
+            except Exception as e:
+                logger.warning(f"Could not read existing config: {e}")
+
+        # Merge strategy: preserve existing values, provide placeholders for others
+        llm_defaults = {
+            "model": LiteLLMConfig.DEFAULT_MODEL
+        }
+        
+        # Merge existing into defaults to preserve what's there and add what's missing
+        llm_config = {**llm_defaults, **existing_config.get("llm", {})}
+        
         final_config = {
-            "project": repo_structure.get("project", Path.cwd().name),
+            "project": existing_config.get("project") or repo_structure.get("project", Path.cwd().name),
             "structure": repo_structure.get("structure", []),
-            "llm": {
-                "model": LiteLLMConfig.DEFAULT_MODEL
-            }
+            "llm": llm_config
         }
 
         # 5. Writing the Yaml Configuration

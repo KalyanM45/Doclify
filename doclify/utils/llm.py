@@ -1,109 +1,78 @@
-import re
 import json
 import os
-import litellm
-from doclify.config.constants import LiteLLMConfig
+from typing import Optional, Any, Union, Dict, List
+from groq import Groq
+
 from doclify.utils.utils import get_prompt
-from pydantic import BaseModel
-from typing import Optional, Type, Any, Union, Dict
 from doclify.utils.logger import get_logger
 from doclify.schema.schema import LLMConfig
+from doclify.config.constants import LiteLLMConfig
 
 logger = get_logger(__name__)
 
-# Configure litellm to be quiet unless there's an error
-litellm.success_callback = []
-litellm.failure_callback = []
-
-def parse_json_response(text: str) -> str:
+def get_chat_model(llm_config: Optional[LLMConfig] = None) -> str:
     """
-    Extracts JSON from a string that might contain markdown code blocks.
+    Returns the target model name. Defaulting to a common Groq model if none specified.
     """
-    # Try to find content within ```json ... ``` blocks
-    json_match = re.search(r'```(?:json)?\s*(.*?)\s*```', text, re.DOTALL)
-    if json_match:
-        return json_match.group(1).strip()
+    raw_model = llm_config.model if llm_config else LiteLLMConfig.DEFAULT_MODEL
     
-    # Fallback: remove simple ``` markers if present at start/end
-    cleaned = text.strip()
-    if cleaned.startswith("```"):
-        cleaned = re.sub(r'^```[a-z]*\n?', '', cleaned)
-    if cleaned.endswith("```"):
-        cleaned = re.sub(r'\n?```$', '', cleaned)
-    
-    return cleaned.strip()
+    if not raw_model:
+        # Defaulting to the model requested by the user
+        raw_model = "qwen/qwen3-32b" 
+        
+    logger.info(f"Targeting Groq model: {raw_model}")
+    return raw_model
 
 def generate_doc(
     code_content: str, 
-    type: str, 
-    json_format: Optional[Type[Any]] = None,
-    llm_config: Optional[LLMConfig] = None
-) -> Union[str, Any]:    
+    prompt_type: str, 
+    llm_config: Optional[LLMConfig] = None,
+    metadata: Optional[dict] = None
+) -> str:    
+    """
+    Generates documentation content using Groq API.
+    """
     try:
-        # Determine model to use
-        raw_model = llm_config.model if llm_config else LiteLLMConfig.DEFAULT_MODEL
-        provider_override = llm_config.provider if llm_config else None
+        model_name = get_chat_model(llm_config)
+        prompt_text = get_prompt(prompt_type)
         
-        # Resolve full model name for LiteLLM
-        if "/" in raw_model:
-            model = raw_model
-        else:
-            # Check the map (Iterate through the new provider -> [models] structure)
-            provider = provider_override
-            if not provider:
-                for p, models in LiteLLMConfig.MODEL_MAP.items():
-                    if raw_model in models:
-                        provider = p
-                        break
-            
-            if provider:
-                model = f"{provider}/{raw_model}"
-            else:
-                # Default fallback or assume gemini
-                model = f"gemini/{raw_model}"
-        
-        logger.info(f"Resolved model: {model} (from raw: {raw_model})")
-        
-        prompt_name = type
-        prompt = get_prompt(prompt_name)
-        
-        messages = [
-            {"role": "user", "content": prompt + code_content}
-        ]
-
-        if json_format:
-            # LiteLLM supports response_format for structured output
-            response = litellm.completion(
-                model=model,
-                messages=messages,
-                response_format=json_format # or json_format.model_json_schema() depending on version
-            )
-            raw_text = response.choices[0].message.content
-            logger.info(f"LLM call successful (Structured Output). Model: {model}")
-            
+        if prompt_type == "final_summary":
+            project_name = metadata.get("project_name", os.path.basename(os.getcwd())) if metadata else os.path.basename(os.getcwd())
             try:
-                # Use pydantic validation if it's a model
-                if hasattr(json_format, "model_validate_json"):
-                    return json_format.model_validate_json(raw_text)
-                return json.loads(raw_text)
-            except Exception as parse_err:
-                logger.warning(f"Direct JSON parse failed, attempting loose extraction: {parse_err}")
-                extracted = parse_json_response(raw_text)
-                if hasattr(json_format, "model_validate_json"):
-                    return json_format.model_validate_json(extracted)
-                return json.loads(extracted)
+                prompt_text = prompt_text.format(project_name=project_name)
+            except (KeyError, ValueError):
+                # Fallback in case there are single {braces} elsewhere in the prompt that aren't escaped
+                prompt_text = prompt_text.replace("{project_name}", project_name)
+        
+        content = f"{prompt_text}\n\n[FILE CONTENT START]\n{code_content}\n[FILE CONTENT END]"
+        
+        # Prefer the API key from environment
+        api_key = os.environ.get("GROQ_API_KEY", "").strip()
+        if not api_key:
+            raise ValueError("Missing GROQ_API_KEY. Please ensure your .env file is set up correctly.")
             
-        else:
-            response = litellm.completion(
-                model=model,
-                messages=messages
-            )
-            raw_text = response.choices[0].message.content
-            logger.info(f"LLM call successful (Standard Output). Model: {model}")
-            
-            # For non-json responses, we still might want to strip markdown blocks if they enclose the whole response
-            return parse_json_response(raw_text)
-            
+        client = Groq(api_key=api_key)
+        
+        kwargs = {
+            "model": model_name,
+            "messages": [{"role": "user", "content": content}],
+            "stream": True,
+            "temperature": 0
+        }
+        
+        logger.info(f"Sending request to Groq API with model {model_name}")
+        
+        response = client.chat.completions.create(**kwargs)
+        
+        message_content = ""
+        # Stream response and accumulate the string
+        for chunk in response:
+            if chunk.choices[0].delta.content is not None:
+                message_content += chunk.choices[0].delta.content
+        
+        return message_content
+
     except Exception as e:
-        logger.error(f"Failed to generate documentation: {str(e)}", exc_info=True)
-        raise ValueError(f"Failed to generate documentation: {e}")
+        err_str = str(e)
+        logger.error(f"Failed to generate documentation using Groq: {err_str}", exc_info=True)
+        raise ValueError(f"Failed to generate documentation: {err_str}")

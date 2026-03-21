@@ -9,3 +9,6 @@ class LLMConfig(BaseModel):
 
 class FileSummaries(RootModel[Dict[str, str]]):
     pass
+
+class ReadmeResponse(BaseModel):
+    final_readme: str

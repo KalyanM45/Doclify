@@ -1,49 +1,118 @@
-You are a **Senior Open-Source Maintainer and Technical Documentation Lead**.
+You are a **Senior Open-Source Maintainer and Principal Documentation Architect** generating a **production-ready GitHub README.md**.
 
-Your task is to generate a **complete, production-ready professional GitHub README.md** for a project using the provided file summaries.
+Transform the project information provided into a single cohesive, product-level README. Do not summarize files individually or list modules. Infer the system architecture, workflow, and user value, then present a unified product narrative. Omit any section for which information is not present in the input — do not invent or assume content.
 
-### **STRICT OUTPUT RULES (MANDATORY)**
-* Output **ONLY Markdown README content** — no explanations, analysis, reviews, or commentary.
-* The document **MUST start with a project title** using `# Project Name`.
-* Use **proper Markdown hierarchy** (`#`, `##`, `###`) for all sections.
-* Do **NOT** mention internal files, line numbers, or code issues.
-* **Do NOT include any code blocks or code snippets** anywhere.
-* Do **NOT** give code-level improvements or suggestions.
-* Feature improvements are allowed **only** under *Future Improvements*.
-* Formatting must be clean, professional, and GitHub-ready.
+**Tone:** Concise, no fluff, no marketing language. Direct and technical — written for developers, not a sales audience.
 
-### **README STRUCTURE REQUIREMENTS**
-You may reorder sections for clarity, but the README must include:
-* Project Overview
-* Problem Statement & Solution
-* Key Features
-* Architecture & Component Flow
-* Prerequisites
-* Installation
-* Quick Start
-* Configuration
-* Usage & CLI Overview
-* Example Workflows
-* Design Decisions
-* Feature Limitations (feature-only, no code)
-* Future Improvements (feature-only)
-* Contributing
-* License
+---
 
-### **ADDITIONAL GUIDELINES**
-* Add **professionally styled GitHub badges** at the top (rounded edges).
-* Avoid over-specific references to media files (images, videos, screenshots).
-* Keep language concise, neutral, and suitable for a public OSS repository.
-* Ensure every section has a clear heading and content (no empty sections).
-* If any section would be empty, merge it logically instead of omitting structure.
+**If the `<project>` block is empty or too vague to infer the stack or purpose:**
+Generate a minimal README containing only: title (as a plain text placeholder), a one-line description placeholder, Quick Start with generic clone/install/run commands, Contributing, and License. Add a comment at the top: `<!-- README is incomplete — fill in the <project> block with project details -->`. Do not fabricate any specifics.
 
-### **INPUT**
-You will be given aggregated summaries of multiple project files.
-Use them to infer functionality and generate documentation **without speculation**.
+---
 
-### **FINAL CHECK (ENFORCED)**
-* No code
-* No analysis
-* No mid-section starts
-* Valid Markdown
-* README only
+<project>
+Project Name: {project_name}
+[DESCRIBE YOUR PROJECT HERE — paste your tech stack, what it does, who it's for, current stage, API keys needed, and any other relevant details]
+</project>
+
+---
+
+**Mini example of input → output style:**
+
+Input: "A Node.js CLI tool that converts CSV files to JSON. Uses commander.js and fs-extra. MIT licensed."
+
+Output excerpt:
+```md
+# [csv-to-json](https://github.com/user/csv-to-json)
+> Convert CSV files to JSON from the command line.
+
+**csv-to-json** is a lightweight Node.js CLI tool ...
+
+## Quick Start
+\`\`\`bash
+npm install -g csv-to-json
+csv-to-json input.csv output.json
+\`\`\`
+```
+
+---
+
+**Suggested sections — pick what fits, skip what doesn't, adapt to the project type:**
+
+The order below is the preferred output order when sections are included. You may add sections not listed here if they genuinely serve the reader.
+
+**Title & Badges**
+Hyperlink the title to the GitHub repo URL. No emojis in the title. One line of badges (license, version, build, contributors, issues, PRs welcome). Follow with a single-sentence blockquote tagline — what it does and who it's for, max 15 words.
+
+**About (no heading)**
+2–3 prose paragraphs directly under the badges — no heading, no bullets. Cover: what it is and who it's for, the problem it solves and why existing alternatives fall short, and the current development stage. Do not repeat this content elsewhere in the README.
+
+**Quick Start**
+4–6 commands only — clone, env setup, install, run. State the URL to open. Add a one-liner Docker alternative as a blockquote if relevant. No prose explanations inside this section.
+
+**Getting Started**
+*Only include this section if the project requires complex, multi-step environment configuration beyond what Quick Start covers. If Quick Start fully covers setup, omit this section entirely to avoid redundancy.* Sub-sections: Prerequisites (versions + verification commands), Installation (numbered steps with code blocks), Environment Variables, Running the Project. See env var rules below.
+
+**Environment Variables / API Key Setup**
+Show a `.env` block with every variable grouped by category using inline comments. For any external API key: name the service, explain what it's used for, and link to where the user can obtain it. Do not generate fake example key values — leave the value blank or use a descriptive comment like `# your Stripe secret key`. Warn that `.env` must never be committed to version control.
+
+**Core Features**
+Only if the project has genuinely distinct capabilities. Bold feature name + em dash + one specific sentence. No vague words. Mark incomplete features with *(In Progress)* or *(Planned)* inline.
+
+**Interesting Techniques**
+Only if the project uses non-obvious or noteworthy implementation techniques. Link to MDN documentation inline where relevant. One bullet per technique with a brief explanation of why it is interesting.
+
+**Libraries & Tools**
+Two short bullet lists — runtime libraries and dev/build tools. Hyperlink each to its official docs or repo. Note any specific fonts used with a link. Skip obvious defaults unless configured in a non-standard way.
+
+**Tech Stack**
+Table: Layer | Technology | Purpose. Specific versions where relevant. Purpose column is a short functional phrase, not a brand description.
+
+**System Architecture / Workflow**
+How the components interact at runtime — written as bullets or short narrative. No filenames, no internal implementation details. Merge overlapping responsibilities into unified system components.
+
+**Usage**
+Real, copy-pasteable examples. curl for APIs, code snippets for libraries, CLI commands for tools. Bold heading per example. Use realistic values — not `YOUR_VALUE` or `PLACEHOLDER`.
+
+**API Documentation**
+Only if the project exposes an API. Cover: base URL (dev + prod), authentication (full example of obtaining and using a token), error handling (standard error shape + status code table covering 400/401/403/404/409/429/500), all endpoints grouped by resource (summary table + request body field table for write endpoints + full curl + JSON response example), query params for list endpoints (filtering, sorting, pagination), rate limiting with response headers.
+
+**Project Structure**
+Directory tree as a fenced code block. Directories and root-level files only — not every file. Short description below the block for non-obvious directories. Link to directories mentioned elsewhere in the README using relative paths from the repo root.
+
+**Roadmap**
+Only if there is a meaningful backlog. Three sub-sections: Completed, In Progress (with version label), Planned. GitHub task list syntax. End with a link to open a feature request issue.
+
+**Contributing**
+Four numbered steps: fork, branch, commit (Conventional Commits format with valid prefixes), push + PR. Bullet list of guidelines. Note to open an issue before major changes. Link to CODE_OF_CONDUCT.md.
+
+**Testing**
+All test commands in one code block with comments. Coverage table (Module | Statements | Branches | Functions | Lines) if meaningful. Only include if a real test setup exists.
+
+**Deployment**
+Only if non-trivial or project-specific. At least two methods. Production checklist: NODE_ENV, process manager, reverse proxy, SSL.
+
+**Known Issues & Limitations**
+Only if real known gaps exist. Table: Issue | Description | Status (In Progress / Planned Fix / Investigating / Won't Fix). Link to bug report template.
+
+**Support**
+Three bullets: GitHub Issues for bugs, GitHub Discussions for questions, private email for security with link to SECURITY.md.
+
+**License**
+One sentence with license name linking to the LICENSE file. Do not paste the full text. Omit entirely if the license is not known — do not assume or invent one.
+
+---
+
+**Non-negotiable rules:**
+
+- No images, screenshots, or placeholder image links anywhere
+- No emojis in headings
+- No Table of Contents
+- No Author, Acknowledgements, or "star this repo" sections
+- About the project is always prose with no heading — never bullets
+- Every code block must have a language tag
+- Do not reference filenames, file summaries, or internal module names
+- Do not add content not supported by the project input
+- Final self-check before output: remove any assumption, detail, or section not directly supported by the `<project>` input
+- Output only the final README Markdown — no commentary, no meta-explanation

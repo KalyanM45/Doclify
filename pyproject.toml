@@ -7,7 +7,7 @@ package = true
 
 [project]
 name = "doclify"
-version = "0.2.1"
+version = "0.2.5"
 description = "AI-powered documentation generator for Python projects"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -21,12 +21,13 @@ dependencies = [
     "pathspec>=1.0.3",
     "pyyaml",
     "rich",
-    "litellm",
-    "pytest>=9.0.2",
+    "python-dotenv",
+    "groq>=1.1.1"
 ]
 
 [project.optional-dependencies]
 dev = [
+    "pytest>=9.0.2",
     "twine>=6.2.0",
 ]
 
