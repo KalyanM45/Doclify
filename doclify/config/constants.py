@@ -1,5 +1,5 @@
 from dataclasses import dataclass
 
 @dataclass
-class CliConfig:
-    MODEL_NAME: str = "gemini-2.5-flash"
+class LiteLLMConfig:
+    DEFAULT_MODEL: str = "qwen/qwen3-32b"

@@ -1,116 +1,142 @@
 <div align="center">
-  <img src="artifacts/logo.png" alt="Doclify Logo" width="100" height="100">
   <h1><a href="https://pypi.org/project/doclify/">Doclify</a></h1>
   <p><i>Intelligent, AI-powered documentation for your software projects.</i></p>
 
-  [![GitHub Stars](https://img.shields.io/github/stars/KalyanM45/Doclify?style=flat&color=ffd700)](https://github.com/KalyanM45/Doclify/stargazers)
+  [![PyPI Version](https://img.shields.io/pypi/v/doclify?style=flat&color=blue)](https://pypi.org/project/doclify/)
   [![PyPI Downloads](https://img.shields.io/pypi/dm/doclify?style=flat&color=blue)](https://pypi.org/project/doclify/)
+  [![GitHub Stars](https://img.shields.io/github/stars/KalyanM45/Doclify?style=flat&color=ffd700)](https://github.com/KalyanM45/Doclify/stargazers)
+  [![GitHub Issues](https://img.shields.io/github/issues/KalyanM45/Doclify?style=flat&color=red)](https://github.com/KalyanM45/Doclify/issues)
+  [![GitHub Forks](https://img.shields.io/github/forks/KalyanM45/Doclify?style=flat&color=green)](https://github.com/KalyanM45/Doclify/network/members)
+  [![GitHub Discussions](https://img.shields.io/github/discussions/KalyanM45/Doclify?style=flat&color=purple)](https://github.com/KalyanM45/Doclify/discussions)
   [![GitHub License](https://img.shields.io/github/license/KalyanM45/Doclify?style=flat&color=blue)](https://github.com/KalyanM45/Doclify/blob/main/LICENSE)
-  [![Issues](https://img.shields.io/github/issues/KalyanM45/Doclify?style=flat&color=red)](https://github.com/KalyanM45/Doclify/issues)
-  [![Status](https://img.shields.io/badge/status-unstable%20v0.2.1-orange)](https://pypi.org/project/doclify/)
-  [![Stable](https://img.shields.io/badge/stable-v0.2.0-green)](https://pypi.org/project/doclify/)
 </div>
 
 ---
 
-**Doclify** is an intelligent command-line tool that automates the process of documenting your AI/ML software projects. By leveraging the power of **Advanced LLMs**, Doclify scans your codebase, understands the context of each file, and generates a comprehensive, professional `README.md` file.
+**Doclify** is an intelligent command-line tool that automates the process of documenting your software projects. By leveraging the fast inference of the **Groq API**, Doclify scans your codebase, understands the context of each file using advanced LLMs (like Llama 3, Qwen, or deepseek), and generates a comprehensive, professional `README.md` file.
+
+### 🎯 Our Mission
+The main aim of this project is to support developers and students who don't have access to paid API credits. By utilizing powerful open source models, Doclify enables anyone to maintain well-structured, clearly documented, and highly organized project management without worrying about subscription costs.
 
 ---
 
-## 🚀 How to Use Doclify
+## 🚀 Getting Started
 
-Doclify is designed to be intuitive. Follow these two simple steps to document your project:
-
-### 1. Initialize Your Project
-Run the `init` command to scan your directory. Doclify will automatically detect your source files and create a `doclify.yaml` configuration file.
-
+### 1. Installation
+Install Doclify directly via pip:
 ```bash
-doclify init
-```
-- Supported Files: **Python, Markdown, Text Files**
-
-*   **What happens?** Doclify respects your `.gitignore` and creates a manifest of files to be analyzed.
-*   **Customization:** You can edit `doclify.yaml` to include or exclude specific files before moving to the next step.
-
-### 2. Generate Documentation
-Once initialized, run the `run` command to start the AI analysis and generate your README.
-
-```bash
-doclify run
+pip install doclify
 ```
 
-*   **AI Analysis**: Doclify sends file contexts to the AI model for summarization.
-*   **Incremental Progress**: You'll see beautiful progress bars and spinners as it works.
-*   **Backup Security**: Doclify automatically saves your existing `README.md` to `README-prev.md` so you never lose your manual edits.
-
-**Result:** A fully documented `README.md` appears in your project root!
-
----
-
-## 🛠️ Detailed Command Reference
-
-Doclify provides a set of powerful commands to manage your documentation lifecycle.
-
-### `doclify init`
-Initializes a new Doclify project in the current directory.
-
-*   **Description**: Scans the project structure, applies `.gitignore` filtering, and generates a `doclify.yaml` file.
-*   **Example**:
-    ```bash
-    doclify init
-    ```
-*   **When to use**: Run this first to define which files Doclify should consider for documentation.
-
-### `doclify run`
-Generates or regenerates the project-wide documentation.
-
-*   **Description**: Processes all files listed in `doclify.yaml` using AI models to create a comprehensive `README.md`.
-*   **Example**:
-    ```bash
-    doclify run
-    ```
-*   **When to use**: Run this after `init` or whenever you want to update your entire README based on the latest code changes.
-
-### `doclify update <path>`
-Updates documentation for a specific file or directory.
-
-*   **Description**: Target a specific subset of your codebase for faster, incremental updates.
-*   **Arguments**:
-    *   `<path>`: Path to the file or directory you want to re-analyze.
-*   **Example**:
-    ```bash
-    doclify update src/utils.py
-    ```
-*   **When to use**: Use this when you've modified specific files and want to refresh their summaries in the overall project context without regenerating everything.
-
----
-
-## ✨ Key Features
-
-*   **🚀 Two-Stage Generation**: High-level project summary built from granular file-level analysis.
-*   **🤖 Powered by AI**: Uses the latest AI SDKs for state-of-the-art code understanding.
-*   **⚡ Smart Scanning**: Built-in `.gitignore` awareness keeps your documentation clean.
-*   **🎨 Polished CLI**: Interactive interface using `rich` with spinners and clear status logs.
-*   **🛡️ Safety First**: Automatic backups of existing README files.
-*   **⚙️ Configurable**: Fine-tune the process via `doclify.yaml`.
-
----
-
-## ⚙️ Configuration
-
-### Environment Variables
-Doclify requires a **Google API Key**. Set it in your terminal environment:
+### 2. Configure Your API Key
+Doclify uses the **Groq API** to perform massive-scale, lightning-fast inference on your codebase. You must set your API key as an environment variable or place it in a `.env` file in your project's root directory.
 
 | Platform | Command |
 | :--- | :--- |
-| **Windows (CMD)** | `set GOOGLE_API_KEY=your_api_key_here` |
-| **Windows (PS)** | `$env:GOOGLE_API_KEY="your_api_key_here"` |
-| **Linux/macOS** | `export GOOGLE_API_KEY=your_api_key_here` |
+| **Windows (CMD)** | `set GROQ_API_KEY=gsk_your_api_key_here` |
+| **Windows (PS)** | `$env:GROQ_API_KEY="gsk_your_api_key_here"` |
+| **Linux/macOS** | `export GROQ_API_KEY=gsk_your_api_key_here` |
+| **.env File** | `GROQ_API_KEY=gsk_your_api_key_here` |
+
+*(Get your free Groq API key at [console.groq.com](https://console.groq.com/))*
+
+---
+
+## 📖 Detailed Usage Guide
+
+Doclify provides a suite of CLI commands to manage your documentation lifecycle.
+
+### `doclify init`
+Initialize Doclify in your target repository.
+
+*   **What it does**: Scans your project folder (respecting your existing `.gitignore` files) and creates a `doclify.yaml` configuration file. It also creates a hidden `.doclify/` directory to manage local caching and save on API costs.
+*   **Command**:
+    ```bash
+    doclify init
+    ```
+*   **When to use**: Always run this first when documenting a new project.
+
+### `doclify models`
+Discover the latest LLMs available on the Groq network.
+
+*   **What it does**: Connects to the Groq API and fetches a real-time table of all available AI models, including their Developer Names, Context Windows, and Maximum Output limits.
+*   **Command**:
+    ```bash
+    doclify models
+    ```
+*   **When to use**: Use this to find a powerful model (like `llama-3.3-70b-versatile` or `deepseek-r1-distill-llama-70b`) to use for your documentation generation.
+
+### `doclify set default <model_id>`
+Configure the default AI model for your project.
+
+*   **What it does**: Updates the `doclify.yaml` file to use the specific model you selected for all future generations.
+*   **Command**:
+    ```bash
+    doclify set default llama-3.3-70b-versatile
+    ```
+
+### `doclify run`
+Generate your complete project documentation.
+
+*   **What it does**: Reads the instructions in your `doclify.yaml`, parallelizes the extraction of all your code files, generates an intelligent summary for each file, and then compiles all that context into a massive, highly professional `README.md`.
+*   **Safety**: If you already have a `README.md`, Doclify automatically creates a backup named `README-prev.md` before overwriting it.
+*   **Command**:
+    ```bash
+    doclify run
+    ```
+*   **Overrides**: You can temporarily test other models without changing your config by passing arguments:
+    ```bash
+    doclify run --model qwen/qwen3-32b
+    ```
+
+### `doclify update <path>`
+Perform targeted updates to specific files to save API tokens and time.
+
+*   **What it does**: Instead of regenerating summaries for your entire codebase, this command only updates the cache for the specific file or directory you specify.
+*   **Arguments**:
+    *   `<path>`: Path to the modified file or directory. To trigger a full README regeneration using the existing cache, use `.`.
+*   **Examples**:
+    * Update a specific script:
+      ```bash
+      doclify update src/database/connection.py
+      ```
+    * Regenerate the `README.md` from the cache:
+      ```bash
+      doclify update .
+      ```
+
+---
+
+## ⚙️ Configuration (`doclify.yaml`)
+
+When you run `doclify init`, a `doclify.yaml` file is generated. You can manually edit this file to finely tune what is included in your documentation.
+
+```yaml
+project: My Awesome Project
+structure:
+  - src/main.py
+  - src/utils/helpers.py
+llm:
+  model: llama-3.3-70b-versatile
+```
+
+If you ever add new files or directories to your project, you can simply run `doclify init` again. It will safely update your `structure` manifest while preserving your model configuration!
+
+---
+
+## 💬 Feedback, Issues, and Discussions
+
+Doclify is constantly evolving, and your feedback is incredibly valuable!
+
+*   **🐛 Found a Bug or Have an Issue?** 
+    Please open an issue on the [GitHub Issues](https://github.com/KalyanM45/Doclify/issues) page. To help us resolve it quickly, please include **detailed steps to reproduce**, your `doclify.yaml` configuration, and the terminal output of the error.
+*   **💡 Have an Idea or Question?**
+    Join the conversation in the [GitHub Discussions](https://github.com/KalyanM45/Doclify/discussions) tab! Whether you need help configuring your project, want to suggest a feature, or just want to share a cool README Doclify generated for you, we'd love to hear from you.
 
 ---
 
 ## 🤝 Contributing & License
 
-Contributions make the open-source community an amazing place! Feel free to fork, branch, and PR.
+Contributions make the open-source community an amazing place! Feel free to fork, branch, and submit Pull Requests.
 
 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.

@@ -10,5 +10,4 @@ def get_prompt(prompt_name: str) -> str:
     if prompt_path.exists():
         return prompt_path.read_text(encoding="utf-8")
     else:
-        # Fallback or error handling
-        return ""
+        raise FileNotFoundError(f"Prompt file not found: {prompt_path}")

@@ -1,15 +1,14 @@
 import yaml
-import click
 import time
 import os
-import json
-import re
+from typing import Optional
 from pathlib import Path
 from rich.console import Console
 from doclify.utils.extract import extract_file_content
 from doclify.utils.llm import generate_doc
-from doclify.utils.file_utils import load_cache, save_cache
-from doclify.schema.schema import FileSummaries
+from doclify.utils.file_utils import load_cache, save_cache, clean_cache
+from doclify.config.constants import LiteLLMConfig
+from doclify.schema.schema import LLMConfig
 from doclify.utils.readme import generate_readme_file
 from doclify.utils.logger import get_logger
 
@@ -17,96 +16,147 @@ from doclify.utils.logger import get_logger
 logger = get_logger(__name__)
 console = Console()
 
-def run_docs():
+def run_docs(model=None, provider=None):
     """
-    Generates documentation with a clean 'uv' inspired UI.
-    Detailed logic is captured in .doclify/logs/
+    Generates documentation with a 200k token-based batching strategy.
     """
-    logger.info("Starting documentation generation pipeline.")
+    logger.info(f"Starting documentation generation pipeline. Overrides: model={model}")
     start_time = time.time()
 
-    # 1. API Key Validation
-    if not os.getenv("GOOGLE_API_KEY"):
-        logger.error("GOOGLE_API_KEY is not set.")
-        console.print("[bold red]✖ Error:[/bold red] [white]GOOGLE_API_KEY[/white] environment variable is not set.")
-        return
+    # 1. Yaml Config Validation
+    # ----------------------------------------------------------------------------------------------------
 
-    # 2. Config Validation
     config_path = Path("doclify.yaml")
     if not config_path.exists():
         logger.warning(f"Configuration file {config_path} missing.")
         console.print("[bold red]✖ Error:[/bold red] [blue]doclify.yaml[/blue] not found. Run [bold green]doclify init[/bold green] first.")
         return
 
+    # 2. Retreiving Files and Language Model from the Yaml Config File
+    # ----------------------------------------------------------------------------------------------------
+
     try:
-        # Load Config
         config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        logger.info(f"doclify.yaml found and loaded successfully.")
+
+        # 2.1 Retreiving Files and Language Model
+        # ----------------------------------------------------------------------------------------------------
         files = config.get("structure", [])
+        llm_model = config.get("llm", {}).get("model", "")
+        generate_readme = True # Default to True
+        logger.info(f"Retrieved {len(files)} files from doclify.yaml.")
+        logger.info(f"Retrieved {llm_model} model from doclify.yaml.")
+
+        # 2.2 Data Handling and Validation
+        # ----------------------------------------------------------------------------------------------------
+        if not llm_model or not llm_model.strip():
+            llm_model = LiteLLMConfig.DEFAULT_MODEL
         
+        # Load configuration
+        # The `config` variable is already loaded above.
+        llm_config_data = config.get("llm", {})
+        llm_config = LLMConfig(**llm_config_data)
+
+        # Apply CLI overrides
+        if model:
+            llm_config.model = model
+        if provider:
+            llm_config.provider = provider
+
+        session_id = time.strftime("%Y-%m-%d_%H-%M:%S")
+        project_name = config.get("project_name", os.path.basename(os.getcwd()))
+        llm_metadata = {"session_id": session_id, "project_name": project_name}
+
         if not files:
             logger.warning("No files found in doclify.yaml structure.")
             console.print("[bold yellow]⚠ Warning:[/bold yellow] No files found in [blue]doclify.yaml[/blue]")
             return
 
-        # UV-style initial summary
+        # 2.3 Cache Handling
+        # ----------------------------------------------------------------------------------------------------
+        logger.info("Initializing cache for file summaries.")
+        cache = load_cache()
+
+        # If cache doesn't exist, initialize it
+        if "files" not in cache:
+            cache["files"] = {}
+        
+        # If any files are missing in cache, initialize them
+        for f in files:
+            if f not in cache["files"]:
+                cache["files"][f] = ""
+        
+        # --- CACHE CLEANING ---
+        # Remove any keys from cache["files"] that are NOT in the doclify.yaml structure
+        cache = clean_cache(cache, files)
+        save_cache(cache)
+
         console.print(f"[bold cyan]Found[/bold cyan] [white]{len(files)} Files[/white] to Process")
         
-        cache = load_cache()
-        all_file_contents = []
+        extracted_files = []
         
-        # 3. Reading Phase (Spinner disappears after)
-        with console.status("[bold cyan]Reading[/bold cyan] project files...", spinner="dots"):
+        # 3. File Reading Phase
+        # ----------------------------------------------------------------------------------------------------
+        with console.status("[bold cyan]Extracting[/bold cyan] Repository Files", spinner="dots"):
             for file_path in files:
-                logger.debug(f"Extracting: {file_path}")
-                content = extract_file_content(file_path)
-                if not (content.startswith("Error") or content.startswith("File not found")):
-                    all_file_contents.append((file_path, f"--- FILE: {file_path} ---\n{content}\n"))
+                chunks = extract_file_content(file_path)
+                if not any(c.startswith("Error") or c.startswith("File not found") for c in chunks):
+                    tokens = sum(len(c) for c in chunks) // 4 # Basic token estimation
+                    extracted_files.append({"path": file_path, "chunks": chunks, "tokens": tokens})
                 else:
-                    logger.warning(f"Skipping {file_path}: {content[:50]}...")
+                    logger.warning(f"Skipping {file_path} due to extraction errors.")
             
-            if not all_file_contents:
-                logger.error("No valid file content found to process.")
-                console.print("[bold yellow]⚠ Warning:[/bold yellow] No valid file content found to process.")
-                return
+        if not extracted_files:
+            logger.error("No valid file content found to process.")
+            console.print("[bold yellow]⚠ Warning:[/bold yellow] No valid file content found to process.")
+            return
 
-        logger.info(f"Extracted content from {len(all_file_contents)} files. Starting summarization.")
 
-        # 4. Summarization Phase (Count updates, spinner disappears after)
-        batch_size = 5
-        total_files = len(all_file_contents)
-        
-        with console.status(f"[bold cyan]Processing[/bold cyan] Files (0/{total_files})...", spinner="dots") as status:
-            for i in range(0, total_files, batch_size):
-                batch = all_file_contents[i:i + batch_size]
-                batch_files = [item[0] for item in batch]
-                batch_content = "\n".join([item[1] for item in batch])
-                
-                # Update console progress (minimalist style)
-                current_progress = min(i + batch_size, total_files)
-                status.update(f"[bold cyan]Processing[/bold cyan] Files ({current_progress}/{total_files})...")
-                
-                logger.info(f"Processing batch: {batch_files}")
-                
+        # 4. Processing Each Extracted File and Generating Summaries
+        # ----------------------------------------------------------------------------------------------------
+
+        def process_file(item, llm_config: Optional[LLMConfig] = None, metadata: Optional[dict] = None):
+            """
+            Processes a single file and generates a documentation summary for it.
+            """
+            file_path = item["path"]
+            chunks = item["chunks"]
+            summaries = []
+            
+            for chunk in chunks:
                 try:
-                    batch_response = generate_doc(batch_content, type="batch_summary", json_format=FileSummaries)
-                    
-                    # Extract JSON
-                    json_match = re.search(r'```json\s*(.*?)\s*```', batch_response, re.DOTALL)
-                    new_summaries = json.loads(json_match.group(1)) if json_match else json.loads(batch_response.strip())
-                    
-                    if "files" not in cache:
-                        cache["files"] = {}
-                    cache["files"].update(new_summaries)
-                    save_cache(cache)
-                    
+                    summary = generate_doc(
+                        code_content=chunk, 
+                        prompt_type="batch_summary", 
+                        llm_config=llm_config,
+                        metadata=metadata
+                    )
+                    if summary:
+                        summaries.append(summary.strip())
                 except Exception as e:
-                    logger.error(f"Error in batch {batch_files}: {str(e)}", exc_info=True)
-                    continue
+                    logger.error(f"Error processing chunk for {file_path}: {str(e)}", exc_info=True)
+            
+            return item, "\n\n".join(summaries) if summaries else ""
 
-        # 5. Final README Generation
-        generate_readme_file(cache, config)
+        total_files = len(extracted_files)
+        processed_count = 0
+
+        for item in extracted_files:
+            with console.status(f"[bold cyan]Summarizing[/bold cyan] ({processed_count}/{total_files})...", spinner="dots"):
+                item_ret, summary = process_file(item, llm_config=llm_config, metadata=llm_metadata)
+            
+            if summary:
+                norm_path = os.path.normpath(item["path"])
+                cache["files"][norm_path] = summary
+                
+            processed_count += 1
         
-        # Final success message with duration
+        save_cache(cache)
+
+        # Final README generation
+        if generate_readme:
+            generate_readme_file(cache, config, llm_config=llm_config, metadata=llm_metadata)
+        
         duration = time.time() - start_time
         console.print(f"[bold green]Generated[/bold green] README.md in [white]{duration:.1f} secs[/white]")
         logger.info(f"Pipeline completed successfully in {duration:.2f}s")

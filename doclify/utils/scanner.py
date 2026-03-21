@@ -1,8 +1,12 @@
 import pathspec
 from pathlib import Path
 
-def scan_repo():
+def scan_repo(include: list = None, exclude: list = None):
     patterns = []
+    
+    # Custom Excludes from config
+    if exclude:
+        patterns.extend(exclude)
 
     # Built-in Python gitignore
     try:
@@ -10,8 +14,7 @@ def scan_repo():
         builtin_ignore = files("doclify.resources").joinpath("Python.gitignore")
         if builtin_ignore.is_file():
             patterns.extend(builtin_ignore.read_text(encoding="utf-8").splitlines())
-    except Exception as e:
-        # Fallback or log error if needed
+    except Exception:
         pass
 
     # User project .gitignore
@@ -19,16 +22,20 @@ def scan_repo():
     if project_gitignore.exists():
         patterns.extend(project_gitignore.read_text().splitlines())
 
-    spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+    spec = pathspec.PathSpec.from_lines("gitignore", patterns)
+    
+    # Custom includes
+    include_patterns = set(include) if include else None
 
-    files = [
-        str(p)
-        for p in Path(".").rglob("*")
-        if p.is_file()
-        and not spec.match_file(p)
-        and p.stat().st_size > 0
-        and p.suffix in {".py", ".md", ".txt"}
-    ]
+    files = []
+    for p in Path(".").rglob("*"):
+        if p.is_file() and not spec.match_file(p) and p.stat().st_size > 0:
+            str_path = str(p)
+            # Apply suffix filter
+            if p.suffix in {".py", ".md", ".txt", ".ipynb"}:
+                # Apply include filter if defined
+                if not include_patterns or any(str_path == inc or str_path.startswith(inc) for inc in include_patterns):
+                    files.append(str_path)
 
     return {
         "project": Path.cwd().name,

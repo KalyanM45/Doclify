@@ -34,10 +34,19 @@ def get_logger(name: str = __name__) -> logging.Logger:
         console_handler.setLevel(logging.WARNING)
         console_handler.setFormatter(formatter)
 
-        root_logger = logging.getLogger()
-        root_logger.setLevel(logging.DEBUG)
-        root_logger.addHandler(file_handler)
-        root_logger.addHandler(console_handler)
+        # Instead of root_logger, we use 'doclify' to capture our project's logs only
+        project_logger = logging.getLogger("doclify")
+        project_logger.setLevel(logging.DEBUG)
+        project_logger.addHandler(file_handler)
+        project_logger.addHandler(console_handler)
+        project_logger.propagate = False  # Prevent logs from bubbling up to root
+
+        # Silence common noisy libraries globally
+        external_loggers = ["urllib3", "httpx", "httpcore", "aiohttp"]
+        for logger_name in external_loggers:
+            ext_logger = logging.getLogger(logger_name)
+            ext_logger.setLevel(logging.WARNING)
+            ext_logger.propagate = False  # Stop propagation for external loggers
 
         _LOGGING_CONFIGURED = True
 
