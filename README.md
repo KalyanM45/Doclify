@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="artifacts/logo.png" alt="Doclify Logo" width="100" height="100">
   <h1><a href="https://pypi.org/project/doclify/">Doclify</a></h1>
   <p><i>Intelligent, AI-powered documentation for your software projects.</i></p>
 
@@ -15,6 +14,9 @@
 ---
 
 **Doclify** is an intelligent command-line tool that automates the process of documenting your software projects. By leveraging the fast inference of the **Groq API**, Doclify scans your codebase, understands the context of each file using advanced LLMs (like Llama 3, Qwen, or deepseek), and generates a comprehensive, professional `README.md` file.
+
+### 🎯 Our Mission
+The main aim of this project is to support developers and students who don't have access to paid API credits. By utilizing powerful open source models, Doclify enables anyone to maintain well-structured, clearly documented, and highly organized project management without worrying about subscription costs.
 
 ---
 

@@ -7,7 +7,7 @@ package = true
 
 [project]
 name = "doclify"
-version = "0.2.5"
+version = "0.2.2"
 description = "AI-powered documentation generator for Python projects"
 readme = "README.md"
 requires-python = ">=3.10"

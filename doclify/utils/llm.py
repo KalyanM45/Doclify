@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from typing import Optional, Any, Union, Dict, List
 from groq import Groq
 
@@ -67,8 +68,11 @@ def generate_doc(
         message_content = ""
         # Stream response and accumulate the string
         for chunk in response:
-            if chunk.choices[0].delta.content is not None:
+            if getattr(chunk.choices[0].delta, "content", None) is not None:
                 message_content += chunk.choices[0].delta.content
+                
+        # Clean out reasoning tags from deepseek or other reasoner models
+        message_content = re.sub(r'<think>.*?</think>', '', message_content, flags=re.DOTALL).strip()
         
         return message_content
 
